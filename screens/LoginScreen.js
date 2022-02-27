@@ -1,19 +1,19 @@
 import React, { useEffect,useState } from 'react'
-import { StyleSheet,Text,View,KeyboardAvoidingView, TextInput, TouchableOpacity } from 'react-native'
-import { auth } from '../firebase'
+import { StyleSheet,Text,View,KeyboardAvoidingView, TextInput, TouchableOpacity ,Alert } from 'react-native'
+import { auth , db} from '../firebase'
 import {createUserWithEmailAndPassword ,signInWithEmailAndPassword} from "firebase/auth"
 import { useNavigation } from '@react-navigation/native'
-import { backgroundColor } from 'react-native/Libraries/Components/View/ReactNativeStyleAttributes'
+import { doc,setDoc} from 'firebase/firestore'
 
 
 const LoginScreen = () => {
     const [email , setEmail ] = useState('')
     const [password , setPassword ] = useState('')
-
+    const [name, setName] = useState('')
+    const [showName, setshowName] = useState(false)
+    const [state ,setState ] = useState(false)
     const navigation = useNavigation()
 
-    const [state ,setState ] = useState(false)
-    
     useEffect(() => {
         const unsub = auth.onAuthStateChanged(user => {
             if(user){
@@ -30,21 +30,50 @@ const LoginScreen = () => {
     },[])
 
     const headleSignUp = () => {
-        createUserWithEmailAndPassword(auth,email,password)
-        .then(userCredentials => {
-            const user = userCredentials.user;
-        })
-        .catch(error => alert("Enter Correct Email & Password"))
+        if((name) == '')
+        {
+            setshowName(true)
+        }
+        else
+        {
+            createUserWithEmailAndPassword(auth,email,password)
+            .then(() => {
+                setDoc(doc(db,'users',Math.random().toString(36).substring(7)),{email:email,name:name})
+            })
+            .catch((error)=>{
+                let err ;
+                switch(error.code)
+                {
+                    case 'auth/email-already-in-use':
+                        err = "Email is already in use"
+                        break;
+                    case 'auth/invalid-email':
+                        err = "Email is not valid"
+                        break;
+                    case 'auth/internal-error':
+                        err = "Email & Password are not valid"
+                        break;
+                    case 'auth/weak-password':
+                        err = "Given Password is weak, Try Again!"
+                        break;
+                    default:
+                        err = "Email & Password are not valid"
+                        break;
+                }
+                Alert.alert("Something Went Wrong!",err)
+            })
+        }
+        
     }
 
     const handleLogin = () => {
         signInWithEmailAndPassword(auth,email,password)
         .then(userCredentials => {
-            const user = userCredentials.user
-            console.log("Logged In With "+user.email)
+            
         })
-        .catch(error=>(console.log("Enter Correct Email & Password")))
+        .catch(error=>alert(error))
     }
+
     if(state)
     {
         return(
@@ -52,6 +81,14 @@ const LoginScreen = () => {
             style={styles.container}
             behavior="padding">
                 <View style={styles.inputContainer}>
+                    <Text style={{marginBottom:'10%',fontSize:20,color:'#FF5500',fontWeight:'700'}}>Made By Mihir 💖</Text>
+                    {showName && <TextInput
+                    value={name}
+                    onChangeText={text=>setName(text)}
+                    placeholder='Name'
+                    style={styles.input}>
+                    </TextInput>}
+
                     <TextInput
                     value={email}
                     onChangeText={text=>setEmail(text)}
@@ -78,6 +115,7 @@ const LoginScreen = () => {
                         <Text style={styles.buttonOutLineText}>Register</Text>
                     </TouchableOpacity>
                 </View>
+                
             </KeyboardAvoidingView>
         )
     }
