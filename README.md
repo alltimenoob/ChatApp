@@ -12,4 +12,4 @@ You can download .apk from [here](https://www.google.com)
 
 or 
 
-You can download Expo Go and paste this [exp://exp.host/@heymihir/ChatApp?release-channel=default](exp://exp.host/@heymihir/ChatApp?release-channel=default)
+You can download Expo Go and paste this <exp://exp.host/@heymihir/ChatApp?release-channel=default>
