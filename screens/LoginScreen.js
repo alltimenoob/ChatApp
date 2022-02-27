@@ -3,18 +3,26 @@ import { StyleSheet,Text,View,KeyboardAvoidingView, TextInput, TouchableOpacity 
 import { auth } from '../firebase'
 import {createUserWithEmailAndPassword ,signInWithEmailAndPassword} from "firebase/auth"
 import { useNavigation } from '@react-navigation/native'
+import { backgroundColor } from 'react-native/Libraries/Components/View/ReactNativeStyleAttributes'
 
 
-const LoginScreen = () =>{
+const LoginScreen = () => {
     const [email , setEmail ] = useState('')
     const [password , setPassword ] = useState('')
 
     const navigation = useNavigation()
 
+    const [state ,setState ] = useState(false)
+    
     useEffect(() => {
         const unsub = auth.onAuthStateChanged(user => {
             if(user){
                 navigation.replace("Home")
+                setState(false)
+            }
+            else
+            {
+                setState(true)
             }
         })
 
@@ -25,7 +33,6 @@ const LoginScreen = () =>{
         createUserWithEmailAndPassword(auth,email,password)
         .then(userCredentials => {
             const user = userCredentials.user;
-            console.log(user.email);
         })
         .catch(error => alert(error.message))
     }
@@ -38,39 +45,46 @@ const LoginScreen = () =>{
         })
         .catch(error=>(console.log(error.message)))
     }
-    return(
-        <KeyboardAvoidingView
-        style={styles.container}
-        behavior="padding">
-            <View style={styles.inputContainer}>
-                <TextInput
-                value={email}
-                onChangeText={text=>setEmail(text)}
-                placeholder='Email'
-                style={styles.input}>
-                
-                </TextInput>
-                <TextInput
-                value={password}
-                onChangeText={text=>setPassword(text)}
-                placeholder='Password'
-                style={styles.input}
-                secureTextEntry>
-                
-                </TextInput>
-            </View>
-            <View style={styles.buttonContainer}>
-                <TouchableOpacity onPress={handleLogin}
-                style={styles.button}>
-                    <Text style={styles.buttonText}>Login</Text>
-                </TouchableOpacity>
-                <TouchableOpacity onPress={headleSignUp}
-                style={[styles.button, styles.buttonOutline]}>
-                    <Text style={styles.buttonOutLineText}>Register</Text>
-                </TouchableOpacity>
-            </View>
-        </KeyboardAvoidingView>
-    )
+    if(state)
+    {
+        return(
+            <KeyboardAvoidingView
+            style={styles.container}
+            behavior="padding">
+                <View style={styles.inputContainer}>
+                    <TextInput
+                    value={email}
+                    onChangeText={text=>setEmail(text)}
+                    placeholder='Email'
+                    style={styles.input}>
+                    
+                    </TextInput>
+                    <TextInput
+                    value={password}
+                    onChangeText={text=>setPassword(text)}
+                    placeholder='Password'
+                    style={styles.input}
+                    secureTextEntry>
+                    
+                    </TextInput>
+                </View>
+                <View style={styles.buttonContainer}>
+                    <TouchableOpacity onPress={handleLogin}
+                    style={styles.button}>
+                        <Text style={styles.buttonText}>Login</Text>
+                    </TouchableOpacity>
+                    <TouchableOpacity onPress={headleSignUp}
+                    style={[styles.button, styles.buttonOutline]}>
+                        <Text style={styles.buttonOutLineText}>Register</Text>
+                    </TouchableOpacity>
+                </View>
+            </KeyboardAvoidingView>
+        )
+    }
+    else
+    {
+        return(<View></View>)
+    }
 }
 
 export default LoginScreen
@@ -79,22 +93,27 @@ const styles = StyleSheet.create({
     container:{
         flex:1,
         justifyContent:'center',
-        alignItems:'center'
+        alignItems:'center',
+        backgroundColor:"#fff"
     },
 
     inputContainer:{
         width:'80%',
+       
     },
 
     input:{
-        backgroundColor:'white',
         padding:15,
         borderRadius:10,
         marginTop:5,
+        borderRadius:10,
+        borderWidth:2,
+        borderColor:"#FF5500",
+        backgroundColor:'white',
     },
                         
     buttonContainer:{
-        width:'60%',
+        width:'80%',
         justifyContent:'center',
         alignItems:'center',
         marginTop:40,
