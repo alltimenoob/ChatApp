@@ -8,7 +8,7 @@ ChatApp is basic chat app that lets you chat with other people. It provides basi
 
 ### Android 
 
-You can download .apk from [here]https://exp-shell-app-assets.s3.us-west-1.amazonaws.com/android/%40heymihir/ChatApp-8d9a76d42781426d9008c7ef1bc9b81f-signed.apk)
+You can download .apk from [here](https://exp-shell-app-assets.s3.us-west-1.amazonaws.com/android/%40heymihir/ChatApp-8d9a76d42781426d9008c7ef1bc9b81f-signed.apk)
 
 ### IOS - Android (For Latest Update)
 
