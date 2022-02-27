@@ -11,6 +11,7 @@ const chatRef = collection(db,'chats')
 const HomeScreen = () =>{
     const [user , setUser] = useState()
     const navigation = useNavigation()
+    const inputMessage = useRef()
     const [messages , setMessages ] = useState([])
     const [messageText,setMessageText] = useState() ;
 
@@ -37,6 +38,7 @@ const HomeScreen = () =>{
     },[messages])
 */
     function handleSend() {
+        inputMessage.current.clear()
         getM().map(m=>{console.log(m);setDoc(doc(db,'chats',Math.random().toString(36).substring(7)),m)})
     }
 
@@ -77,6 +79,7 @@ const HomeScreen = () =>{
             {render()}
             <View style={styles.messageInputContainer}>
                 <TextInput 
+                ref={inputMessage}
                 value={messageText}
                 placeholder="Enter Message" 
                 onChangeText={text=>setMessageText(text)}
