@@ -23,7 +23,7 @@ React Native, Expo CLI, 🔥FireStore , 🔥FireAuth
 Login Screen: 
 ![alt text][ss1]
 
-Login Screen: 
+Chat Screen: 
 ![alt text][ss2]
 
 
