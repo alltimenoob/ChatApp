@@ -21,12 +21,12 @@ React Native, Expo CLI, 🔥FireStore , 🔥FireAuth
 ### Screenshots
 
 Login Screen: 
-![Does Not Exist][ss1]
+![alt text][ss1]
 
 Login Screen: 
-![Does Not Exist][ss2]
+![alt text][ss2]
 
 
-[ss1]: "https://github.com/alltimenoob/ChatApp/blob/master/ss-1.jpeg"
+[ss1]: https://github.com/alltimenoob/ChatApp/blob/master/ss-1.jpeg "! Available"
 
-[ss2]: "https://github.com/alltimenoob/ChatApp/blob/master/ss-2.jpeg"
+[ss2]: https://github.com/alltimenoob/ChatApp/blob/master/ss-2.jpeg "! Available"
