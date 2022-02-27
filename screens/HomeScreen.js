@@ -25,7 +25,7 @@ const HomeScreen = () =>{
             setUser({id:data.data().email,name:data.data().name})
         })
     }
-  
+
     useEffect(()=>{ 
         getUser()
         const unsub = onSnapshot(chatRef,(snapshot)=>{
@@ -37,8 +37,6 @@ const HomeScreen = () =>{
             .sort((a,b)=>b.createdAt - a.createdAt)
             appendMessages(messages)
         })
-        
-    
         return () => unsub()
     },[]);
 
@@ -69,7 +67,6 @@ const HomeScreen = () =>{
 */
     function handleSend() {
        
-        console.log(user)
         inputMessage.current.clear()
         getM().map((m)=>{setDoc(doc(db,'chats',Math.random().toString(36).substring(7)),m)})
     }
@@ -95,8 +92,9 @@ const HomeScreen = () =>{
                 styles.rightmessageName : styles.leftmessageName}>{item.user.name}</Text>
                 <View style={(item.user.id === auth.currentUser?.email)?
                 styles.rightchat : styles.leftchat }>
-                    <Text style={(item.user.id === auth.currentUser?.email)?
-                styles.rightmessageText : styles.leftmessageText }>{item.text}</Text>
+                    <Text numberOfLines={99999} ellipsizeMode='tail'
+                        style={(item.user.id === auth.currentUser?.email)?
+                            styles.rightmessageText : styles.leftmessageText }>{item.text}</Text>
                     <Text style={(item.user.id === auth.currentUser?.email)?
                 styles.rightmessageTime : styles.leftmessageTime }>{getTime(item)}</Text>
                 </View>
@@ -113,6 +111,12 @@ const HomeScreen = () =>{
     return(
         <SafeAreaView style={{width:'100%',height:'100%'}}>
         <KeyboardAvoidingView style={styles.container} behavior="padding">
+            <View style={styles.profilebar}>
+                <Text style={styles.welcometext}>Welcome To Chat Room</Text>
+                <TouchableOpacity style={styles.signoutbutton} onPress={handleSignOut}> 
+                    <Text style={styles.signouttext}>Sign Out</Text>
+                </TouchableOpacity>
+            </View>
             {render()}
             <View style={styles.messageInputContainer}>
                 <TextInput 
@@ -178,18 +182,21 @@ const styles = StyleSheet.create({
 
     leftchat:{
         minWidth:100,
+        maxWidth:'80%',
         padding:10,
         borderWidth:1,
         borderRadius:27,
-        marginTop:5,
         marginStart:5,
         marginBottom:10,
         alignSelf:'flex-start',
+        justifyContent:'space-between',
+        flexDirection:'column',
         borderColor:'#FF5500',
     },
 
     rightchat:{
         minWidth:100,
+        maxWidth:'80%',
         backgroundColor:'#FF5500',
         padding:10,
         borderWidth:1,
@@ -197,6 +204,8 @@ const styles = StyleSheet.create({
         marginEnd:5,
         marginBottom:10,
         alignSelf:'flex-end',
+        justifyContent:'space-between',
+        flexDirection:'column',
         borderColor:'#FFF',
         overflow: 'hidden',
         color:"#FFF",
@@ -209,7 +218,6 @@ const styles = StyleSheet.create({
         alignSelf:'flex-end'
     },
     leftmessageName:{
-        marginTop:15,
         fontSize:10,
         color:'#111111',
         marginStart:10,
@@ -218,26 +226,59 @@ const styles = StyleSheet.create({
     rightmessageText:{
         alignSelf:'flex-start',
         color:'white',
-        marginStart:4,
+        marginStart:5,
+        marginTop:1,
         fontSize:15,
     },
     leftmessageText:{
         alignSelf:'flex-start',
         color:'black',
         marginStart:5,
+        marginTop:1,
         fontSize:15,
     },
     rightmessageTime:{
         fontSize:10,
-        marginTop:2,
+        color:'grey',
+        marginTop:1,
+        fontWeight:'700',
+        marginStart:10,
         color:'white',
         alignSelf:'flex-end'
     },
     leftmessageTime:{
         fontSize:10,
-        marginTop:2,
-        color:'black',
+        fontWeight:'700',
+        marginTop:1,
+        marginStart:10,
         alignSelf:'flex-end'
     },
-
+    profilebar:{
+        flexDirection:'row',
+        width:'100%',
+        height:'7%',
+        justifyContent:'space-between',
+        backgroundColor:'#F8F8F8',
+        borderBottomWidth:1,
+        borderBottomColor:'#E1E1E1'
+    },
+    signoutbutton:{
+        marginEnd:'10%',
+        justifyContent:'center',
+        alignSelf:'flex-end',
+        height:'100%',
+    },
+    welcometext:{
+        marginStart:'10%',
+        color:'#FF5500',
+        alignSelf:'center',
+        fontSize:14,
+        fontWeight:'900'
+    },
+    signouttext:{
+        alignSelf:'center',
+        color:'#77777E',
+        fontSize:14,
+        fontWeight:'900',
+    }
 })

@@ -38,7 +38,7 @@ const LoginScreen = () => {
         {
             createUserWithEmailAndPassword(auth,email,password)
             .then(() => {
-                setDoc(doc(db,'users',Math.random().toString(36).substring(7)),{email:email,name:name})
+                setDoc(doc(db,'users',Math.random().toString(36).substring(7)),{email:email.toLocaleLowerCase(),name:name})
             })
             .catch((error)=>{
                 let err ;
@@ -102,7 +102,6 @@ const LoginScreen = () => {
                     placeholder='Password'
                     style={styles.input}
                     secureTextEntry>
-                    
                     </TextInput>
                 </View>
                 <View style={styles.buttonContainer}>
