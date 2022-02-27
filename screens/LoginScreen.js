@@ -34,7 +34,7 @@ const LoginScreen = () => {
         .then(userCredentials => {
             const user = userCredentials.user;
         })
-        .catch(error => alert(error.message))
+        .catch(error => alert("Enter Correct Email & Password"))
     }
 
     const handleLogin = () => {
@@ -43,7 +43,7 @@ const LoginScreen = () => {
             const user = userCredentials.user
             console.log("Logged In With "+user.email)
         })
-        .catch(error=>(console.log(error.message)))
+        .catch(error=>(console.log("Enter Correct Email & Password")))
     }
     if(state)
     {
