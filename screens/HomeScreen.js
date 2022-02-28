@@ -1,10 +1,15 @@
 // @refresh reset
 import { useNavigation } from '@react-navigation/native'
-import React, { useEffect , useState , useCallback, useRef} from 'react'
-import { StyleSheet,Text,TouchableOpacity,TextInput,View,KeyboardAvoidingView,FlatList,Image } from 'react-native'
+import React, { useEffect , useState , useCallback, useRef } from 'react'
+import { StyleSheet,Text,TouchableOpacity,TextInput,View,KeyboardAvoidingView,FlatList,Image,Keyboard} from 'react-native'
 import { auth ,db} from '../firebase'
-import { collection,doc,async,query,where,onSnapshot,setDoc,getDocs} from 'firebase/firestore'
+import { manipulateAsync, SaveFormat } from 'expo-image-manipulator';  
+import { collection,doc,query,where,onSnapshot,setDoc,getDocs} from 'firebase/firestore'
 import { SafeAreaView } from 'react-native-safe-area-context'
+import * as ImagePicker from 'expo-image-picker'
+import { getMultiFactorResolver } from 'firebase/auth';
+import { getPixelSizeForLayoutSize } from 'react-native/Libraries/Utilities/PixelRatio';
+
 const chatRef = collection(db,'chats')
 
 const HomeScreen = () =>{
@@ -13,8 +18,18 @@ const HomeScreen = () =>{
     const navigation = useNavigation()
     const inputMessage = useRef()
     const [messages , setMessages ] = useState([])
-    const [messageText,setMessageText] = useState() ;
+    const [messageText,setMessageText] = useState(" ")
+    const [image,setImage] = useState(null) 
+    const isMounted = useRef(null);
 
+    useEffect(() => {
+      // executed when component mounted
+      isMounted.current = true;
+      return () => {
+        // executed when unmount
+        isMounted.current = false;
+      }
+    }, []);
 
     async function getUser()
     {
@@ -24,11 +39,12 @@ const HomeScreen = () =>{
         d.forEach((data)=>{
             setUser({id:data.data().email,name:data.data().name})
         })
+
     }
 
     useEffect(()=>{ 
         getUser()
-        const unsub = onSnapshot(chatRef,(snapshot)=>{
+        const unsub = new Promise(()=>onSnapshot(chatRef,(snapshot)=>{
             const messages = snapshot.docChanges().filter(({type})=> type==='added')
             .map(({doc}) => {
                 const message = doc.data()
@@ -36,14 +52,52 @@ const HomeScreen = () =>{
             })
             .sort((a,b)=>b.createdAt - a.createdAt)
             appendMessages(messages)
-        })
+        }))
         return () => unsub()
     },[]);
 
+    async function getImage() {
+        let permissionResult = await ImagePicker.requestMediaLibraryPermissionsAsync()
+        
+        if (permissionResult.granted === false) {
+            alert("Permission to access camera roll is required!");
+            return;
+        }
+
+        let pickerResult = await ImagePicker.launchImageLibraryAsync({
+            title: 'Choose an Image',
+            base64: true
+         });
+        
+        if(pickerResult.cancelled == false && pickerResult.type == "image" )
+        {
+            
+            const manipResult = await manipulateAsync(pickerResult.uri,
+                [{ resize: { width: 150 } }],
+                { compress: 0.3, format : SaveFormat.JPEG }
+                );
+               
+            setImage(manipResult);
+            setSend(true)
+        }
+
+    }
 
     const appendMessages = useCallback((messages)=>{
         setMessages((previous)=>messages.concat(previous))
     },[messages])
+
+    function getDate(element)
+    {
+        const monthNames = ["January", "February", "March", "April", "May", "June",
+                        "July", "August", "September", "October", "November", "December"
+                        ];
+        let date = new Date(element.createdAt).getDate()
+        let month= new Date(element.createdAt).getMonth()
+        let year = new Date(element.createdAt).getFullYear()
+
+        return date+" "+monthNames[month]+" "+year
+    }
 
     function getTime(element)
     {
@@ -52,11 +106,15 @@ const HomeScreen = () =>{
         let minute = new Date(element.createdAt).getMinutes()
         if(hours > 12)
         {
-             time = (hours - 12) + ":" + minute + " PM" 
+            hours = hours % 12
+            hours= (hours<1)?12:hours
+
+            time = ("0" + hours).slice(-2) + ":" + ("0" + minute).slice(-2) + " PM" 
         }
         else
         {
-             time = hours + " : " + minute + "AM" 
+            hours= (hours<1)?12:hours
+            time = ("0" + hours).slice(-2) + ":" + ("0" + minute).slice(-2) + " AM" 
         }
         return time
     }
@@ -65,12 +123,7 @@ const HomeScreen = () =>{
         setMessages((previous) => GiftedChat.append(previous , messages) )
     },[messages])
 */
-    function handleSend() {
-       
-        inputMessage.current.clear()
-        getM().map((m)=>{setDoc(doc(db,'chats',Math.random().toString(36).substring(7)),m)})
-    }
-
+   
     const handleSignOut = () => {
         auth.signOut()
         .then(()=>{
@@ -79,46 +132,104 @@ const HomeScreen = () =>{
         .catch(error => alert(error.message))
     }
     
-    function render() {
+    function renderChat() {
+        let date = (messages[0]!=undefined)? getDate(messages[messages.length-1]):"Today";
+        let headerDate = date
         return (
             <FlatList 
             inverted
             style={{width:'100%'}}
                 data={messages}
                 extraData={messages}
+                ListFooterComponent={<Text style={styles.header}>{date}</Text>}
                 renderItem={({item})=>
                 <View>
                     <Text style={(item.user.id === auth.currentUser?.email)?
                 styles.rightmessageName : styles.leftmessageName}>{item.user.name}</Text>
                 <View style={(item.user.id === auth.currentUser?.email)?
                 styles.rightchat : styles.leftchat }>
+                    {(item.data)?<Image source={{uri: `data:image/jpeg;base64,${item.data}`}}  style={{width:250,height:250,borderRadius:20,marginBottom:10}}/>:null}
                     <Text numberOfLines={99999} ellipsizeMode='tail'
                         style={(item.user.id === auth.currentUser?.email)?
                             styles.rightmessageText : styles.leftmessageText }>{item.text}</Text>
                     <Text style={(item.user.id === auth.currentUser?.email)?
-                styles.rightmessageTime : styles.leftmessageTime }>{getTime(item)}</Text>
+                        styles.rightmessageTime : styles.leftmessageTime }>{getTime(item)}</Text>
                 </View>
-                </View>}>
+                </View>}
+                ItemSeparatorComponent={(item)=>{
+
+                    if(getDate(item.leadingItem)!=date&&getDate(item.leadingItem)!=headerDate)
+                    {
+                        date = getDate(item.leadingItem)
+                        return <Text style={styles.header}>{getDate(item.leadingItem)}</Text>
+                    }
+                    else
+                    {
+                        return null
+                    }
+                }}>
             </FlatList>
         );
     }
 
-    function getM(){
-        const message = [{id:Math.random(10).toString(36).substring(7),text:messageText,createdAt:new Date().getTime(),user:user}]
-        return message
+    function renderImageSelector()
+    {
+        return(
+            <View style={{flex:1,width:'100%',height:'100%',alignItems:'center',justifyContent:'center'}}>
+            <View style={styles.imageContainer}>
+                <Image source={{uri:image.uri}} style={styles.image}/>
+            </View>
+            </View>)
     }
+
+    async function handleSend() {
+        
+        if(image)
+        {
+            const data = await manipulateAsync(image.uri,
+                [{ resize: { width: 150 } }],
+                { compress: 0.3, format : SaveFormat.JPEG,base64:true });
+        
+            const msg= {id:Math.random(10).toString(36).substring(7),text:messageText,data:data.base64,createdAt:new Date().getTime(),user:user}
+          
+            new Promise((res,rej)=>{
+                setDoc(doc(db,'chats',Math.random(45).toString(36).substring(7)),msg)
+            }).catch()
+
+            /*console.log(encodeURI(JSON.stringify(msg)).split(/%..|./).length - 1)*/
+            
+            
+        }
+        else
+        {
+            const msg= {id:Math.random(10).toString(36).substring(7),text:messageText,data:"",createdAt:new Date().getTime(),user:user}
+          
+            new Promise((res,rej)=>{ 
+                setDoc(doc(db,'chats',Math.random(45).toString(36).substring(7)),msg)
+            }).catch()
+        }
+       
+        setImage(null)
+        setMessageText(null)
+        inputMessage.current.clear()
+    }
+
 
     return(
         <SafeAreaView style={{width:'100%',height:'100%'}}>
-        <KeyboardAvoidingView style={styles.container} behavior="padding">
+        <KeyboardAvoidingView style={styles.container} onPress={Keyboard.dismiss} behavior={Platform.OS === "ios" ? "padding" : null}>
             <View style={styles.profilebar}>
                 <Text style={styles.welcometext}>Welcome To Chat Room</Text>
                 <TouchableOpacity style={styles.signoutbutton} onPress={handleSignOut}> 
                     <Text style={styles.signouttext}>Sign Out</Text>
                 </TouchableOpacity>
             </View>
-            {render()}
+
+            {(image)?renderImageSelector():renderChat()}
             <View style={styles.messageInputContainer}>
+                <TouchableOpacity onPress={ getImage } style={styles.button}>
+                    <Image source={require('../assets/camera.png')} style={{width:30,height:30} } />
+                </TouchableOpacity>
                 <TextInput 
                 ref={inputMessage}
                 value={messageText}
@@ -155,26 +266,21 @@ const styles = StyleSheet.create({
     messageInputContainer:{
         marginLeft:10,
         marginRight:10,
-        marginBottom:10,
         width:'100%',
+        borderWidth:2,
+        borderColor:'#FF5500',
         flexDirection:'row',
-        borderRadius:25,
-        borderWidth:1,
-        borderColor:"#FF5500"
     },
 
     button:{
         width:'20%',
-        borderTopRightRadius:20,
-        borderBottomRightRadius:20,
         backgroundColor:"#FF5500",
         alignItems:'center',
         justifyContent:'center'
     },
 
     messageInput:{
-        width:"80%",
-        borderRadius:25,
+        minWidth:'60%',
         padding:15,
         backgroundColor:'white',
         alignSelf:'flex-start',
@@ -280,5 +386,35 @@ const styles = StyleSheet.create({
         color:'#77777E',
         fontSize:14,
         fontWeight:'900',
+    },
+    header:{
+        padding:10,
+        backgroundColor:'#F8F8F8',
+        borderRadius:20,
+        overflow:'hidden',
+        alignSelf:'center',
+    },
+
+    image:{
+        width: "100%",
+        height: "100%",
+        resizeMode:'contain'
+    },
+    imageContainer:{
+        width: "100%",
+        height: "80%",
+        backgroundColor:'#EEEEEE',
+    },
+    sendimagebuttonContainer:{
+        padding:10,
+        borderRadius:10,
+        borderWidth:2,
+        borderColor:'#FF5500',
+        backgroundColor:'#FF5500'
+    },
+    sendimageButton:{
+        color:'white',
+        padding:10,
     }
+
 })
