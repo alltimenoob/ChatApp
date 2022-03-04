@@ -7,8 +7,7 @@ import { manipulateAsync, SaveFormat } from 'expo-image-manipulator';
 import { collection,doc,query,where,onSnapshot,setDoc,getDocs} from 'firebase/firestore'
 import { SafeAreaView } from 'react-native-safe-area-context'
 import * as ImagePicker from 'expo-image-picker'
-import { getMultiFactorResolver } from 'firebase/auth';
-import { getPixelSizeForLayoutSize } from 'react-native/Libraries/Utilities/PixelRatio';
+import AsyncStorage from '@react-native-async-storage/async-storage'
 
 const chatRef = collection(db,'chats')
 
@@ -39,22 +38,57 @@ const HomeScreen = () =>{
         d.forEach((data)=>{
             setUser({id:data.data().email,name:data.data().name})
         })
+    }
 
+    async function getLocalMessages()
+    {
+        const dataFromStorage = await AsyncStorage.getItem('@messages');
+        const data = [JSON.parse(dataFromStorage)]
+        console.log(dataFromStorage)
+        if(data !== null) {
+            return data
+        }
+        return null
+    }
+
+    async function setLocalMessages(value)
+    { 
+        const dataFromStorage = await AsyncStorage.getItem('@messages');
+        const data = JSON.parse(dataFromStorage)
+        if(data !== null) {
+           messages.push(value)
+        }
+
+        
     }
 
     useEffect(()=>{ 
         getUser()
+        const localMessages = getLocalMessages()
+        
+        if(localMessages!=null)
+        {
+            
+        }
+
         const unsub = new Promise(()=>onSnapshot(chatRef,(snapshot)=>{
             const messages = snapshot.docChanges().filter(({type})=> type==='added')
             .map(({doc}) => {
                 const message = doc.data()
+                setLocalMessages(message)
                 return {...message, 'createdAt': message.createdAt}
             })
             .sort((a,b)=>b.createdAt - a.createdAt)
-            appendMessages(messages)
+            
         }))
+        
         return () => unsub()
     },[]);
+
+    
+    const appendMessages = useCallback((m)=>{
+        setMessages((previous)=>m.concat(previous))
+    },[messages])
 
     async function getImage() {
         let permissionResult = await ImagePicker.requestMediaLibraryPermissionsAsync()
@@ -73,8 +107,8 @@ const HomeScreen = () =>{
         {
             
             const manipResult = await manipulateAsync(pickerResult.uri,
-                [{ resize: { width: 150 } }],
-                { compress: 0.3, format : SaveFormat.JPEG }
+                [{ resize: { width: 500 } }],
+                { compress: 1, format : SaveFormat.JPEG }
                 );
                
             setImage(manipResult);
@@ -83,9 +117,6 @@ const HomeScreen = () =>{
 
     }
 
-    const appendMessages = useCallback((messages)=>{
-        setMessages((previous)=>messages.concat(previous))
-    },[messages])
 
     function getDate(element)
     {
@@ -187,14 +218,14 @@ const HomeScreen = () =>{
         if(image)
         {
             const data = await manipulateAsync(image.uri,
-                [{ resize: { width: 150 } }],
-                { compress: 0.3, format : SaveFormat.JPEG,base64:true });
+                [{ resize: { width: 500 } }],
+                { compress: 1, format : SaveFormat.JPEG,base64:true });
         
             const msg= {id:Math.random(10).toString(36).substring(7),text:messageText,data:data.base64,createdAt:new Date().getTime(),user:user}
           
-            new Promise((res,rej)=>{
-                setDoc(doc(db,'chats',Math.random(45).toString(36).substring(7)),msg)
-            }).catch()
+            
+            setDoc(doc(db,'chats',Math.random(45).toString(36).substring(7)),msg)
+            
 
             /*console.log(encodeURI(JSON.stringify(msg)).split(/%..|./).length - 1)*/
             
@@ -204,9 +235,8 @@ const HomeScreen = () =>{
         {
             const msg= {id:Math.random(10).toString(36).substring(7),text:messageText,data:"",createdAt:new Date().getTime(),user:user}
           
-            new Promise((res,rej)=>{ 
-                setDoc(doc(db,'chats',Math.random(45).toString(36).substring(7)),msg)
-            }).catch()
+            
+            setDoc(doc(db,'chats',Math.random(45).toString(36).substring(7)),msg)
         }
        
         setImage(null)
